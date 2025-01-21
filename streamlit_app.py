@@ -145,9 +145,9 @@ elif pagina == "Concatenar Relatório":
                 output.seek(0)
 
                 st.download_button(
-                    label="Baixar Relatório Concatenado",
+                    label="Baixar Relatório Completo",
                     data=output,
-                    file_name="relatorio_concatenado.xlsx",
+                    file_name="relatorio_concatenado_completo.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
 
