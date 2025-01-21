@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from io import BytesIO
 
 # Função de cálculo da média diária de sinistros
 def calcular_media_diaria(x, y, z):
@@ -8,11 +9,20 @@ def calcular_media_diaria(x, y, z):
     media_diaria_necessaria = (y + x * total_dias) / total_dias
     return media_diaria_necessaria
 
-# Função para concatenar relatórios
+# Função para concatenar relatórios com verificação de colunas
 def concatenar_relatorios(relatorios):
-    # Garantir que todos os relatórios têm colunas com os mesmos títulos
-    relatorio_concatenado = pd.concat(relatorios, ignore_index=True)
-    return relatorio_concatenado
+    # Lê o primeiro relatório para base
+    relatorio_base = relatorios[0]
+
+    for relatorio in relatorios[1:]:
+        # Verifica se as colunas são compatíveis
+        if list(relatorio.columns) != list(relatorio_base.columns):
+            raise ValueError("Os relatórios possuem colunas incompatíveis!")
+
+        # Concatena os relatórios
+        relatorio_base = pd.concat([relatorio_base, relatorio], ignore_index=True)
+
+    return relatorio_base
 
 # Estilo personalizado para o tema dark com cores agressivas
 st.markdown("""
@@ -98,7 +108,7 @@ elif pagina == "Concatenar Relatório":
     st.write("Aqui você pode concatenar até 20 relatórios com colunas de títulos semelhantes.")
 
     # Upload de múltiplos relatórios
-    arquivos = st.file_uploader("Carregar relatórios (CSV ou XLSX), até 20 arquivos:", type=["csv", "xlsx"], accept_multiple_files=True)
+    arquivos = st.file_uploader("Carregar relatórios (XLSX), até 20 arquivos:", type=["xlsx"], accept_multiple_files=True)
 
     if arquivos:
         # Inicializar lista para armazenar DataFrames
@@ -107,19 +117,16 @@ elif pagina == "Concatenar Relatório":
         # Processar cada arquivo
         for arquivo in arquivos:
             try:
-                # Tentar carregar os relatórios dependendo da extensão
-                if arquivo.name.endswith('.csv'):
-                    relatorio = pd.read_csv(arquivo)
-                elif arquivo.name.endswith('.xlsx'):
-                    relatorio = pd.read_excel(arquivo)
+                # Carregar o relatório
+                relatorio = pd.read_excel(arquivo)
                 
-                # Adicionar o relatório carregado à lista
+                # Adicionar à lista
                 relatorios.append(relatorio)
-                
+
                 # Exibir uma amostra do relatório carregado
-                st.write(f"Relatório {arquivo.name}:")
+                st.write(f"Relatório {arquivo.name} carregado com sucesso:")
                 st.dataframe(relatorio.head())
-                
+
             except Exception as e:
                 st.error(f"Erro ao carregar o arquivo {arquivo.name}: {e}")
 
@@ -131,7 +138,19 @@ elif pagina == "Concatenar Relatório":
                 st.success("Relatórios concatenados com sucesso!")
                 st.write("Relatório Concatenado:")
                 st.dataframe(relatorio_concatenado.head())
+
+                # Download do relatório concatenado
+                output = BytesIO()
+                relatorio_concatenado.to_excel(output, index=False, engine='openpyxl')
+                output.seek(0)
+
+                st.download_button(
+                    label="Baixar Relatório Concatenado",
+                    data=output,
+                    file_name="relatorio_concatenado.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+
             except Exception as e:
                 st.error(f"Erro ao concatenar os relatórios: {e}")
-
 
