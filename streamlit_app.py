@@ -136,7 +136,7 @@ elif pagina == "Concatenar Relatório":
                 # Concatenar todos os relatórios carregados
                 relatorio_concatenado = concatenar_relatorios(relatorios)
                 st.success("Relatórios concatenados com sucesso!")
-                st.write("Relatório Concatenado:")
+                st.write("Relatório Concatenado (Amostra):")
                 st.dataframe(relatorio_concatenado.head())
 
                 # Download do relatório concatenado
@@ -153,4 +153,5 @@ elif pagina == "Concatenar Relatório":
 
             except Exception as e:
                 st.error(f"Erro ao concatenar os relatórios: {e}")
+
 
