@@ -9,9 +9,9 @@ def calcular_media_diaria(x, y, z):
     return media_diaria_necessaria
 
 # Função para concatenar relatórios
-def concatenar_relatorios(relatorio_1, relatorio_2):
-    # Garantir que ambos os relatórios têm colunas com os mesmos títulos
-    relatorio_concatenado = pd.concat([relatorio_1, relatorio_2], ignore_index=True)
+def concatenar_relatorios(relatorios):
+    # Garantir que todos os relatórios têm colunas com os mesmos títulos
+    relatorio_concatenado = pd.concat(relatorios, ignore_index=True)
     return relatorio_concatenado
 
 # Estilo personalizado para o tema dark com cores agressivas
@@ -95,30 +95,38 @@ if pagina == "Calculadora de Sinistros":
         st.success(f"Para reduzir o número de sinistros pendentes em {z} meses, você precisará resolver, em média, {media_diaria:.2f} sinistros por dia.")
 
 elif pagina == "Concatenar Relatório":
-    st.write("Aqui você pode concatenar dois relatórios com colunas de títulos semelhantes.")
+    st.write("Aqui você pode concatenar até 20 relatórios com colunas de títulos semelhantes.")
 
-    # Upload dos relatórios
-    arquivo_1 = st.file_uploader("Carregar o primeiro relatório (CSV):", type=["csv"])
-    arquivo_2 = st.file_uploader("Carregar o segundo relatório (CSV):", type=["csv"])
+    # Upload de múltiplos relatórios
+    arquivos = st.file_uploader("Carregar relatórios (CSV ou XLSX), até 20 arquivos:", type=["csv", "xlsx"], accept_multiple_files=True)
 
-    if arquivo_1 and arquivo_2:
-        # Carregar os dados dos arquivos CSV
-        relatorio_1 = pd.read_csv(arquivo_1)
-        relatorio_2 = pd.read_csv(arquivo_2)
-
-        # Exibir uma amostra dos dados
-        st.write("Primeiro Relatório:")
-        st.dataframe(relatorio_1.head())
-        st.write("Segundo Relatório:")
-        st.dataframe(relatorio_2.head())
-
-        # Concatenar os relatórios
-        if st.button("Concatenar Relatórios"):
+    if arquivos:
+        # Inicializar lista para armazenar DataFrames
+        relatorios = []
+        
+        # Processar cada arquivo
+        for arquivo in arquivos:
             try:
-                relatorio_concatenado = concatenar_relatorios(relatorio_1, relatorio_2)
+                if arquivo.name.endswith('.csv'):
+                    relatorio = pd.read_csv(arquivo)
+                elif arquivo.name.endswith('.xlsx'):
+                    relatorio = pd.read_excel(arquivo)
+                relatorios.append(relatorio)
+                
+                # Exibir uma amostra do relatório carregado
+                st.write(f"Relatório {arquivo.name}:")
+                st.dataframe(relatorio.head())
+            except Exception as e:
+                st.error(f"Erro ao carregar o arquivo {arquivo.name}: {e}")
+        
+        if len(relatorios) > 0 and st.button("Concatenar Relatórios"):
+            try:
+                # Concatenar todos os relatórios carregados
+                relatorio_concatenado = concatenar_relatorios(relatorios)
                 st.success("Relatórios concatenados com sucesso!")
                 st.write("Relatório Concatenado:")
                 st.dataframe(relatorio_concatenado.head())
             except Exception as e:
                 st.error(f"Erro ao concatenar os relatórios: {e}")
+
 
