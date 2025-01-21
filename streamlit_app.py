@@ -107,18 +107,23 @@ elif pagina == "Concatenar Relatório":
         # Processar cada arquivo
         for arquivo in arquivos:
             try:
+                # Tentar carregar os relatórios dependendo da extensão
                 if arquivo.name.endswith('.csv'):
                     relatorio = pd.read_csv(arquivo)
                 elif arquivo.name.endswith('.xlsx'):
                     relatorio = pd.read_excel(arquivo)
+                
+                # Adicionar o relatório carregado à lista
                 relatorios.append(relatorio)
                 
                 # Exibir uma amostra do relatório carregado
                 st.write(f"Relatório {arquivo.name}:")
                 st.dataframe(relatorio.head())
+                
             except Exception as e:
                 st.error(f"Erro ao carregar o arquivo {arquivo.name}: {e}")
-        
+
+        # Concatenar os relatórios
         if len(relatorios) > 0 and st.button("Concatenar Relatórios"):
             try:
                 # Concatenar todos os relatórios carregados
