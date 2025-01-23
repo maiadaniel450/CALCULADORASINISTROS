@@ -24,6 +24,26 @@ def concatenar_relatorios(relatorios):
 
     return relatorio_base
 
+# Função para processar planilha de seguradoras
+def processar_planilha(file, seguradoras_permitidas):
+    # Lê a planilha enviada
+    df = pd.read_excel(file)
+
+    # Identifica a coluna da seguradora com base em possíveis variações de nome
+    colunas_seguradora = [col for col in df.columns if col.upper() in ["SEG", "SEGURADORA"]]
+    
+    if not colunas_seguradora:
+        st.error("Nenhuma coluna correspondente a 'Seguradora' foi encontrada.")
+        return None
+
+    coluna_alvo = colunas_seguradora[0]
+
+    # Substitui seguradoras não permitidas por "CONGÊNERE 1", "CONGÊNERE 2", etc.
+    df[coluna_alvo] = df[coluna_alvo].apply(lambda x: x if x in seguradoras_permitidas else None)
+    df[coluna_alvo] = df[coluna_alvo].fillna(pd.Series([f"CONGÊNERE {i+1}" for i in range(len(df))]))
+
+    return df
+
 # Estilo personalizado para o tema dark com cores agressivas
 st.markdown("""
     <style>
@@ -84,10 +104,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Configuração da interface
-st.title("Sistema de Gestão de Sinistros")
+st.title("Sistema de Gestão de Sinistros e Seguradoras")
 
 # Criação do menu de navegação
-pagina = st.selectbox("Escolha a opção", ("Calculadora de Sinistros", "Concatenar Relatório"))
+pagina = st.selectbox("Escolha a opção", ("Calculadora de Sinistros", "Concatenar Relatório", "Processar Seguradoras"))
 
 if pagina == "Calculadora de Sinistros":
     st.write(
@@ -153,5 +173,30 @@ elif pagina == "Concatenar Relatório":
 
             except Exception as e:
                 st.error(f"Erro ao concatenar os relatórios: {e}")
+
+elif pagina == "Processar Seguradoras":
+    st.write("Substitua seguradoras na planilha conforme critérios definidos.")
+
+    # Upload de arquivo
+    uploaded_file = st.file_uploader("Envie sua planilha", type=["xlsx", "xls"])
+    seguradoras_permitidas = st.text_area("Digite as seguradoras permitidas separadas por vírgulas", "")
+
+    if uploaded_file and seguradoras_permitidas:
+        seguradoras_lista = [seg.strip() for seg in seguradoras_permitidas.split(",")]
+
+        planilha_processada = processar_planilha(uploaded_file, seguradoras_lista)
+
+        if planilha_processada is not None:
+            st.success("Processamento concluído! Faça o download da planilha alterada abaixo.")
+            output = BytesIO()
+            planilha_processada.to_excel(output, index=False, engine='openpyxl')
+            output.seek(0)
+
+            st.download_button(
+                label="Baixar planilha",
+                data=output,
+                file_name="planilha_processada.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
 
 
